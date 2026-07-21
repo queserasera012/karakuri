@@ -9,7 +9,7 @@
 <script>
 /* ===== BUILD CONFIG (build.jsが書き換える。手動編集しない) ===== */
 const EDITION = "full";      // "full" | "lite"
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.9.2";
 const STORE_URL = "https://shinme-lab.booth.pm/";
 const LITE = (EDITION === "lite");
 const VER  = (APP_VERSION.indexOf("__")===0) ? "dev" : APP_VERSION;
@@ -151,10 +151,13 @@ function mergeProfile(local,remote){
  ['coins','coinCap','coinsDate','coinsToday','name','theme','avatar','grade','lock','placed'].forEach(k=>{
   if(k in newer)out[k]=newer[k];
  });
- // collection(ずかん)は max 合流(grow-only)
+ // collection(ずかん)は max 合流(grow-only)。実データ形式 {n:count} を保つ
  const col={};
  const ck=new Set([...Object.keys(local.collection||{}),...Object.keys(remote.collection||{})]);
- for(const k of ck)col[k]=Math.max((local.collection||{})[k]||0,(remote.collection||{})[k]||0);
+ for(const k of ck){
+  const m=Math.max(colN((local.collection||{})[k]), colN((remote.collection||{})[k]));
+  if(m>0)col[k]={n:m};
+ }
  out.collection=col;
  out.up=Math.max(local.up||0, remote.up||0);
  // seen(解禁説明)は OR 合流
@@ -195,7 +198,7 @@ async function cloudPull(){
     const remoteCol=col.apps.karakuri[uuid]||{};
     const lc=S.profiles[uuid].collection||{};
     const merged=Object.assign({},lc);
-    for(const k in remoteCol)merged[k]=Math.max(merged[k]||0,remoteCol[k]||0);
+    for(const k in remoteCol){const n=Math.max(colN(merged[k]),colN(remoteCol[k]));if(n>0)merged[k]={n:n};}
     S.profiles[uuid].collection=merged;
    }
   }
@@ -235,7 +238,7 @@ async function cloudPush(){
   const lc=S.profiles[uuid].collection||{};
   const rc=kcol[uuid]||{};
   const merged=Object.assign({},rc);
-  for(const k in lc)merged[k]=Math.max(merged[k]||0,lc[k]||0);
+  for(const k in lc){const n=Math.max(colN(merged[k]),colN(lc[k]));if(n>0)merged[k]=n;}
   kcol[uuid]=merged;
  }
  col.apps.karakuri=kcol;
@@ -261,6 +264,9 @@ function newProfile(name,avatar,theme,grade){
   placed:false, seen:{}, up:Date.now()};   // up: プロフィール最終更新(同期マージ判定用)
 }
 function curP(){return S.cur?S.profiles[S.cur]:null;}
+/* ずかんの1体分の獲得数。実データは {n:count} 形式(旧・数値も許容)。
+   同期・パスポートのクラウド行には数値で書く(パスポート仕様§2.5・まなびと同形式)。 */
+function colN(v){return typeof v==='number'?v:((v&&v.n)||0);}
 /* かぞくのからくり塔(骨格§6): 家族合算のクリア数+ぴったり数から導出。
    保存しない=同期マージが正しい限り塔は常に正しい(壊れようがない)。 */
 function towerStats(){
@@ -385,6 +391,7 @@ body{
 @keyframes splash{0%{transform:translateY(0);opacity:1}60%{transform:translateY(45%) scale(.9);opacity:1}100%{transform:translateY(80%) scale(.7);opacity:0}}
 #moko.cheer{animation:cheer .55s ease 2}
 @keyframes cheer{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-22%) rotate(-7deg)}}
+.fx.lap{color:var(--gold);font-weight:900;text-shadow:0 0 6px rgba(255,201,77,.5)}
 .fx{position:absolute;z-index:6;font-family:"Mochiy Pop One";font-weight:400;
   color:var(--moon);text-shadow:0 2px 0 rgba(0,0,0,.4);font-size:1rem;
   animation:fxUp .8s ease forwards;pointer-events:none;white-space:nowrap}
@@ -794,40 +801,40 @@ const STAGES=[
   grid:['s s s s s s s s s s s s s s s','s g g g g g s s s s s s s s s','s s s s s g s s s s s s s s s','s s s s s g g g g g s s s s s','s s s s s s s s s g s s s s s','s s s s s s s s s g g g g g s','s s s s s s s s s s s s s g s','s s s s s s s s s s s s s g s','s s s s s s s s s s s s s s s'],start:[1,1],chest:[13,7]},
  {id:'6-8',lv:6,name:'にじゅうの だいぼうけん',par:4,hint:'いちばん おおきな かいだん。🔁の なかの 🔁で みじかく',maxBlocks:4,
   grid:['s s s s s s s s s s s s s s s s s s s s s s s','s g g g g g g s s s s s s s s s s s s s s s s','s s s s s s g g g g g g s s s s s s s s s s s','s s s s s s s s s s s g g g g g g s s s s s s','s s s s s s s s s s s s s s s s g g g g g g s','s s s s s s s s s s s s s s s s s s s s s g s','s s s s s s s s s s s s s s s s s s s s s s s'],start:[1,1],chest:[21,5]},
- {id:'7-1',lv:7,name:'わざを つくろう',par:10,hint:'おなじ うごきに なまえを つけて、なんども よべるよ',maxBlocks:10,
-  grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s s g s g s s','s s g s s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[7,3]]},
- {id:'7-2',lv:7,name:'とびとびの たからばこ',par:11,hint:'とびとびでも ⭐なら みじかい',maxBlocks:11,
-  grid:['s s s s s s s s s s s','s g g g g g g g g g s','s s g s s g s s g s s','s s g s s g s s g s s','s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[8,3]]},
- {id:'7-3',lv:7,name:'よっつの たから',par:11,hint:'おなじ わざを 4かい',maxBlocks:11,
-  grid:['s s s s s s s s s s s s','s g g g g g g g g g g s','s s g s s g s g s g s s','s s g s s g s g s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[7,3],[9,3]]},
- {id:'7-4',lv:7,name:'ひろい のはら',par:12,hint:'とおくても おなじ わざ',maxBlocks:12,
-  grid:['s s s s s s s s s s s s','s g g g g g g g g g g s','s s g s s s g s s g s s','s s g s s s g s s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[6,3],[9,3]]},
- {id:'7-5',lv:7,name:'いつつの たから',par:12,hint:'たくさんの たからも ⭐で',maxBlocks:12,
-  grid:['s s s s s s s s s s s s s s','s g g g g g g g g g g g g s','s s g s g s s g s g s g s s','s s g s g s s g s g s g s s','s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[4,3],[7,3],[9,3],[11,3]]},
- {id:'7-6',lv:7,name:'ふかい たから',par:14,hint:'ふかく もぐる わざ',maxBlocks:14,
+  // ===== Lv7: わざ⭐(教える面先頭) =====
+ {id:'7-1',lv:7,name:'わざを つくろう',par:11,hint:'⭐わざに「みぎ・した・した・うえ・うえ」を いれて、⭐を 3かい つかおう!',maxBlocks:11,
+  grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s g s s g s s','s s g s g s s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,3],[4,3],[7,3]]},
+ {id:'7-2',lv:7,name:'はなの わざ',par:9,hint:'わざの なかに ❓を いれてみよう!「すすんで、はなだったら もぐる」',maxBlocks:9,
+  grid:['s s s s s s s s s s','s g f g f g g f g s','s s g s g s s g s s','s s g s g s s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,3],[4,3],[7,3]]},
+ {id:'7-3',lv:7,name:'はなの だいぼうけん',par:10,hint:'はなの ばしょが かわっても、おなじ わざで だいじょうぶ!',maxBlocks:10,
+  grid:['s s s s s s s s s s s s','s g f g g g f g g f g s','s s g s s s g s s g s s','s s g s s s g s s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[6,3],[9,3]]},
+ {id:'7-4',lv:7,name:'うえに のぼって',par:11,hint:'こんどは うえに のぼる わざ!',maxBlocks:11,
+  grid:['s s s s s s s s s s','s s g s g s s g s s','s s g s g s s g s s','s g g g g g g g g s','s s s s s s s s s s'],start:[1,3],chests:[[2,1],[4,1],[7,1]]},
+ {id:'7-5',lv:7,name:'よこあなの しま',par:11,hint:'よこに ほる わざも つくれるよ',maxBlocks:11,
+  grid:['s s s s s','s g s s s','s g g g s','s g s s s','s g g g s','s g s s s','s g s s s','s g g g s','s g s s s','s s s s s'],start:[1,1],chests:[[3,2],[3,4],[3,7]]},
+ {id:'7-6',lv:7,name:'ふかい たから',par:11,hint:'ふかい あなは、わざの なかで 🔁を つかうと みじかい!',maxBlocks:11,
   grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s s g s g s s','s s g s s g s g s s','s s g s s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,4],[5,4],[7,4]]},
- {id:'7-7',lv:7,name:'ふかい のはら',par:14,hint:'ふかい わざを なんども',maxBlocks:14,
-  grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s g s s g s s','s s g s g s s g s s','s s g s g s s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,4],[4,4],[7,4]]},
- {id:'7-8',lv:7,name:'わざの だいぼうけん',par:18,hint:'ながい わざを なんども',maxBlocks:18,
-  grid:['s s s s s s s s s s s s s','s g g g g g g g g g g g s','s s g s s g s g s s g s s','s s g s s g s g s s g s s','s s g s s g s g s s g s s','s s s s s s s s s s s s s'],start:[1,1],chests:[[2,4],[5,4],[7,4],[10,4]]},
- // ===== Lv8: わざ複合(卒業) =====
- {id:'8-1',lv:8,name:'わざと くりかえし',par:10,hint:'⭐を 🔁で まとめられるよ',maxBlocks:10,
-  grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s s g s g s s','s s g s s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[7,3]]},
- {id:'8-2',lv:8,name:'ふたつの わざ',par:10,hint:'🌟 ふたつめの わざも つかえる',maxBlocks:10,
-  grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s s g s g s s','s s g s s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[7,3]]},
- {id:'8-3',lv:8,name:'わざと もし',par:10,hint:'はなの ときだけの わざ',maxBlocks:10,
-  grid:['s s s s s s s s s s','s g g g g g g g g s','s s g s s g s g s s','s s g s s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[7,3]]},
- {id:'8-4',lv:8,name:'ふかさ いろいろ',par:11,hint:'ふかさで わざを つかいわけ',maxBlocks:11,
-  grid:['s s s s s s s s s s s','s g g g g g g g g g s','s s g s s g s s g s s','s s g s s g s s g s s','s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[8,3]]},
- {id:'8-5',lv:8,name:'たからの やま',par:11,hint:'みじかく まとめよう',maxBlocks:11,
-  grid:['s s s s s s s s s s s s','s g g g g g g g g g g s','s s g s g s s g s g s s','s s g s g s s g s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[4,3],[7,3],[9,3]]},
- {id:'8-6',lv:8,name:'ふかい やま',par:19,hint:'ながい わざを 4かい',maxBlocks:19,
-  grid:['s s s s s s s s s s s s s s','s g g g g g g g g g g g g s','s s g s s g s s g s s g s s','s s g s s g s s g s s g s s','s s g s s g s s g s s g s s','s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,4],[5,4],[8,4],[11,4]]},
- {id:'8-7',lv:8,name:'おおきな ぼうけん',par:19,hint:'ふたつの わざを つかいこなそう',maxBlocks:19,
-  grid:['s s s s s s s s s s s s s s','s g g g g g g g g g g g g s','s s g s s g s s g s s g s s','s s g s s g s s g s s g s s','s s g s s g s s g s s g s s','s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,4],[5,4],[8,4],[11,4]]},
- {id:'8-8',lv:8,name:'そつぎょう せいさく',par:22,hint:'いままでの ぜんぶを つかって!',maxBlocks:22,
-  grid:['s s s s s s s s s s s s s s s s','s g g g g g g g g g g g g g g s','s s g s s g s s g s s g s g s s','s s g s s g s s g s s g s g s s','s s g s s g s s g s s g s g s s','s s s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,4],[5,4],[8,4],[11,4],[13,4]]},
-];
+ {id:'7-7',lv:7,name:'とびとびの たから',par:12,hint:'とびとびでも おなじ わざで とれるよ',maxBlocks:12,
+  grid:['s s s s s s s s s s s s','s g g g g g g g g g g s','s s g s s g s s s g s s','s s g s s g s s s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[9,3]]},
+ {id:'7-8',lv:7,name:'よっつの たから',par:14,hint:'たからが 4つ! わざなら へっちゃら',maxBlocks:14,
+  grid:['s s s s s s s s s s s s s','s g g g g g g g g g g g s','s s g s s g s g s s g s s','s s g s s g s g s s g s s','s s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,3],[7,3],[10,3]]},
+ // ===== Lv8: わざ2本🌟(卒業制作末尾) =====
+ {id:'8-1',lv:8,name:'ふたつの わざ',par:17,hint:'あさい あなは ⭐、ふかい あなは 🌟。ふたつの わざを つくろう!',maxBlocks:17,
+  grid:['s s s s s s s s s s s s s s s','s g g g g g g g g g g g g g s','s s g s s g s s g s s g s s s','s s g s s g s s g s s g s s s','s s s s s g s s s s s g s s s','s s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[5,4],[8,3],[11,4]]},
+ {id:'8-2',lv:8,name:'むっつの たから',par:15,hint:'ふかい・あさいの じゅんばんに きをつけて!',maxBlocks:15,
+  grid:['s s s s s s s s s s s s s s s','s g g g g g g g g g g g g g s','s s g s g s g s g s g s g s s','s s g s g s g s g s g s g s s','s s g s s s g s s s g s s s s','s s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,4],[4,3],[6,4],[8,3],[10,4],[12,3]]},
+ {id:'8-3',lv:8,name:'よこあなの ふかさ',par:15,hint:'よこあなにも あさい・ふかいが あるよ',maxBlocks:15,
+  grid:['s s s s s s','s g s s s s','s g g g s s','s g s s s s','s g g g g s','s g s s s s','s g g g s s','s g s s s s','s g g g g s','s g s s s s','s s s s s s'],start:[1,1],chests:[[3,2],[4,4],[3,6],[4,8]]},
+ {id:'8-4',lv:8,name:'のぼりの ふかさ',par:15,hint:'たかい やまと ひくい やま!',maxBlocks:15,
+  grid:['s s s s s s s s s s s','s s s s g s s s g s s','s s g s g s g s g s s','s s g s g s g s g s s','s g g g g g g g g g s','s s s s s s s s s s s'],start:[1,4],chests:[[2,2],[4,1],[6,2],[8,1]]},
+ {id:'8-5',lv:8,name:'のぼって もぐって',par:16,hint:'うえは ⭐、したは 🌟!',maxBlocks:16,
+  grid:['s s s s s s s s s s s s s','s s s s s s s s s s s s s','s s g s s s g s s s g s s','s s g s s s g s s s g s s','s g g g g g g g g g g g s','s s s s g s s s g s s s s','s s s s g s s s g s s s s','s s s s g s s s g s s s s'],start:[1,4],chests:[[2,2],[4,7],[6,2],[8,7],[10,2]]},
+ {id:'8-6',lv:8,name:'おおきな しま',par:16,hint:'たから 5つ! ⭐と 🌟の こうたい!',maxBlocks:16,
+  grid:['s s s s s s s s s s s s s','s g g g g g g g g g g g s','s s g s g s g s g s g s s','s s g s g s g s g s g s s','s s s s g s s s g s s s s','s s s s s s s s s s s s s'],start:[1,1],chests:[[2,3],[4,4],[6,3],[8,4],[10,3]]},
+ {id:'8-7',lv:8,name:'ふかい あさい',par:17,hint:'ふかい あなが さきの ばん!',maxBlocks:17,
+  grid:['s s s s s s s s s s s s s s','s g g g g g g g g g g g g s','s s g s s g s s g s s g s s','s s g s s g s s g s s g s s','s s g s s s s s g s s s s s','s s s s s s s s s s s s s s'],start:[1,1],chests:[[2,4],[5,3],[8,4],[11,3]]},
+ {id:'8-8',lv:8,name:'そつぎょう せいさく',par:15,hint:'いままでの ぜんぶを つかった そつぎょうせいさく! がんばれ!',maxBlocks:15,
+  grid:['s s s s s s s s s s s s s s s','s s s s s s s s s s s s s s s','s s g s s s g s s s g s s s s','s s g s s s g s s s g s s s s','s g g g g g g g g g g g g g s','s s s s g s s s g s s s g s s','s s s s g s s s g s s s g s s','s s s s g s s s g s s s g s s'],start:[1,4],chests:[[2,2],[4,7],[6,2],[8,7],[10,2],[12,7]]},];
 const DIRS={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]};
 function parseStage(st){
  const rows=st.grid.map(r=>r.split(' '));
@@ -936,6 +943,7 @@ function simulate(st,prog,skills){
  function doMove(dir,isTop){
   const r=stepPos(p,x,y,dir);
   const node={x:r.x,y:r.y,ev:r.ev,got:null};
+  if(lapStack.length){const t=lapStack[lapStack.length-1];node.lap={cur:t.cur,total:t.total};}
   path.push(node);
   steps++;
   if(isTop)usedTop++;
@@ -954,6 +962,7 @@ function simulate(st,prog,skills){
  }
  // リストを順に実行。isTop=トップレベルか(extra算出用)。停止したら true
  let callDepth=0;
+ const lapStack=[];   // いま回っている🔁の {cur,total}(最内が末尾)
  function runList(list,isTop){
   for(let i=0;i<list.length;i++){
    const b=list[i];
@@ -973,7 +982,12 @@ function simulate(st,prog,skills){
    }
    else if(b&&b.body){      // 🔁くりかえし
     const n=b.r||2;
-    for(let r=0;r<n;r++){ if(runList(b.body,false))return true; }
+    for(let r=0;r<n;r++){
+     lapStack.push({cur:r+1,total:n});
+     const stop=runList(b.body,false);
+     lapStack.pop();
+     if(stop)return true;
+    }
    }
   }
   return false;
@@ -1277,8 +1291,9 @@ function drawStage(){
  const showR=repUnlocked()&&st.parR;
  const capNote=st.maxBlocks?' <b class="gr">つかえるのは '+st.maxBlocks+'こまで</b>':'';
  $('goalLine').innerHTML='<span class="gm">'+MOKO_SVG+'</span><span>'+st.name
-  +' <b>ぴったり: '+st.par+'こ</b>'
-  +(showR?' <b class="gr">⚙️からくり: '+st.parR+'こ</b>':'')+capNote+'</span>';
+  +(st.harappa?' <b class="gr">じゆうに れんしゅう!</b>'
+    :' <b>ぴったり: '+st.par+'こ</b>'
+     +(showR?' <b class="gr">⚙️からくり: '+st.parR+'こ</b>':'')+capNote)+'</span>';
  const bw=Math.min(window.innerWidth-60,420);
  cellPx=Math.floor(bw/P.w);
  const b=$('board');
@@ -1332,12 +1347,14 @@ function drawProg(){
  const rp=document.querySelector('.pal[data-d="REP"]');
  const cp=document.querySelector('.pal[data-d="IF"]');
  const sp=document.querySelector('.pal[data-d="STAR"]');
- const inWaza=(activeStrip!=='main');
+ const sp2=document.querySelector('.pal[data-d="STAR2"]');
+ // ⭐/🌟は「挿入先がメイン側」のときだけ活性(開いたコンテナ優先で判定)
+ const starDest = openC ? stripOf(openC) : activeStrip;
  // 🔁: 実行中 / ❓を開いている間 / (🔁の中の🔁でLv6未満) は不可
  if(rp)rp.disabled=running || (openC && (openC.if || !nestUnlocked()));
  if(cp)cp.disabled=running || (openC && openC.if);
- // ⭐: 実行中 / わざストリップがアクティブな間(わざの中に⭐不可=再帰防止) は不可
- if(sp)sp.disabled=running || inWaza;
+ if(sp)sp.disabled=running || starDest!=='main';
+ if(sp2)sp2.disabled=running || starDest!=='main';
 }
 /* 1本のストリップ要素にイベントを束ねる(メイン・わざ共通) */
 function bindStripEvents(s){
@@ -1350,13 +1367,17 @@ function bindStripEvents(s){
  });
  s.querySelectorAll('[data-tog]').forEach(el=>{
   el.onclick=(e)=>{e.stopPropagation();if(running)return;SFX.tap();
-   const b=nodeAt(el.dataset.tog);openC=(openC===b)?null:b;drawProg();
+   const b=nodeAt(el.dataset.tog);openC=(openC===b)?null:b;
+   activeStrip=splitPath(el.dataset.tog).sid;   // 触ったストリップに挿入先を追従
+   drawProg();
    msg(openC?'🔁の なかに いれています。おわったら ✓ を おしてね':'');};
  });
  s.querySelectorAll('[data-done]').forEach(el=>{
   el.onclick=(e)=>{e.stopPropagation();if(running)return;SFX.tap();
    const parent=parentOf(el.dataset.done);
-   openC=parent||null; drawProg();
+   openC=parent||null;
+   activeStrip=splitPath(el.dataset.done).sid;
+   drawProg();
    msg(openC?'🔁の なかを つづけて いれられるよ。おわったら ✓':'つぎの ブロックは うしろに はいるよ');};
  });
  // 余白タップ: そのストリップをアクティブにしつつ、開いているコンテナは閉じる
@@ -1365,6 +1386,18 @@ function bindStripEvents(s){
   if(activeStrip!==sid){SFX.tap();activeStrip=sid;drawProg();}};
 }
 /* パス("0" や "2.1")でASTのノードを取る/消す */
+/* ノードがどのストリップ(main/s1/s2)に属すか。再帰走査 */
+function stripOf(node){
+ function inList(list){
+  for(const b of list){
+   if(b===node)return true;
+   if(b&&b.body&&inList(b.body))return true;
+  }
+  return false;
+ }
+ for(const sid of ['main','s1','s2'])if(inList(listFor(sid)))return sid;
+ return null;
+}
 /* パスは "sid:i.j.k"。sid=main|s1|s2。接頭辞でリストを選び、残りでノードを辿る */
 function splitPath(path){
  const c=path.indexOf(':');
@@ -1419,7 +1452,8 @@ function palette(){
  $('palette').innerHTML=['U','L','D','R'].map(d=>'<button class="pal" data-d="'+d+'">'+ARROWS[d]+'</button>').join('')
   +(repUnlocked()?'<button class="pal rep" data-d="REP" title="くりかえし">🔁</button>':'')
   +(ifUnlocked()?'<button class="pal cond" data-d="IF" title="もし">❓</button>':'')
-  +(wazaUnlocked()?'<button class="pal star" data-d="STAR" title="わざ">⭐</button>':'');
+  +(wazaUnlocked()?'<button class="pal star" data-d="STAR" title="わざ">⭐</button>':'')
+  +(waza2Unlocked()?'<button class="pal star" data-d="STAR2" title="ぎんのわざ">🌟</button>':'');
  document.querySelectorAll('.pal').forEach(el=>{
   el.onclick=()=>{
    if(running)return;
@@ -1433,10 +1467,12 @@ function palette(){
    }
    // 追加先リスト: コンテナを開いていればその中、なければアクティブストリップ
    const destList = openC ? openC.body : listFor(activeStrip);
-   if(dd==='STAR'){
-    // ⭐わざ呼び出し。わざストリップの中では押せない(=再帰防止)。メイン側のみ。
-    if(activeStrip!=='main' && !openC){ return; }
-    destList.push({call:'s1'});   // 初期は s1。Lv8では長押し等で s2 に切替(簡易版は s1固定+ヘッダで区別)
+   if(dd==='STAR'||dd==='STAR2'){
+    // ⭐/🌟わざ呼び出し。挿入先(開いたコンテナ or アクティブストリップ)が
+    // メイン側のときだけ置ける(わざの中に わざ=再帰 を作らせない)。
+    const destStrip = openC ? stripOf(openC) : activeStrip;
+    if(destStrip!=='main'){ SFX.bump(); msg('わざの なかに わざは いれられないよ',true); return; }
+    destList.push({call: dd==='STAR2'?'s2':'s1'});
     SFX.tap();clearAssist();drawProg();
     return;
    }
@@ -1459,9 +1495,9 @@ function palette(){
   };
  });
 }
-function fx(text,x,y){
+function fx(text,x,y,cls){
  const b=$('board');
- const e=document.createElement('div');e.className='fx';e.textContent=text;
+ const e=document.createElement('div');e.className='fx'+(cls?' '+cls:'');e.textContent=text;
  e.style.left=(x*cellPx-6)+'px';e.style.top=(y*cellPx-14)+'px';
  b.appendChild(e);setTimeout(()=>e.remove(),850);
 }
@@ -1568,7 +1604,7 @@ function localProfileStats(p){
  let clear=0,pit=0;
  Object.values(p.stages||{}).forEach(x=>{if(x.clear)clear++;if(x.pit)pit++;});
  const col=p.collection||{};
- const got=Object.keys(col).filter(k=>col[k]>0).length;
+ const got=Object.keys(col).filter(k=>colN(col[k])>0).length;
  const total=(LITE?gachaPool().length:KARA_CHARS.length);
  return {clear,pit,got,total};
 }
@@ -1594,6 +1630,18 @@ function renderPassport(){
    +'<span class="ppLv">Lv'+q.level+'</span>'
    +'<span class="ppStat">🏁'+st.clear+' ⭐'+st.pit+' 📚'+st.got+'/'+st.total+'</span></div>';
  });
+ // この端末のしんめコレクション(全員合算・同期がなくても見える)
+ {
+  const gotSet={};
+  S.order.forEach(uuid=>{const q=S.profiles[uuid];if(!q)return;
+   const cc=q.collection||{};for(const cid in cc)if(colN(cc[cid])>0)gotSet[cid]=true;});
+  const gotN=Object.keys(gotSet).length;
+  const pool=(LITE?gachaPool():KARA_CHARS);
+  h+='<div class="ppsub" style="margin-top:10px">しんめコレクション(この たんまつ) <span class="mut">'+gotN+'/'+pool.length+'たい</span></div>';
+  h+='<div class="ppChars">';
+  pool.forEach(c=>{h+='<span class="ppChar'+(gotSet[c.id]?'':' lk')+'">'+(gotSet[c.id]?c.e:'❔')+'</span>';});
+  h+='</div>';
+ }
  h+='</div>';
  // §2.2/2.3 クラウド部(プレースホルダ。二段描画で差し込む)
  const cfg=!!(S.cloud&&S.cloud.pass);
@@ -1657,7 +1705,7 @@ function passportCloudHtml(data,stale){
   if(ak==='karakuri'){
    // 自区画: 絵文字で描く。全プロフィール合算のユニーク獲得
    const gotSet={};
-   for(const uuid in region){const cc=region[uuid]||{};for(const cid in cc)if(cc[cid]>0)gotSet[cid]=true;}
+   for(const uuid in region){const cc=region[uuid]||{};for(const cid in cc)if(colN(cc[cid])>0)gotSet[cid]=true;}
    const ids=Object.keys(gotSet);
    h+='<div class="ppsub">からくり工房 <span class="mut">'+ids.length+'/'+KARA_CHARS.length+'たい</span></div>';
    h+='<div class="ppChars">';
@@ -1666,7 +1714,7 @@ function passportCloudHtml(data,stale){
   }else{
    // 他アプリ区画: 数のみ(中身を推測しない)
    let n=0;
-   for(const uuid in region){const cc=region[uuid]||{};n+=Object.keys(cc).filter(cid=>cc[cid]>0).length;}
+   for(const uuid in region){const cc=region[uuid]||{};n+=Object.keys(cc).filter(cid=>colN(cc[cid])>0).length;}
    h+='<div class="ppsub">'+esc(appLabel(ak))+' <span class="mut">'+n+'たい あつめたよ</span></div>';
    h+='<div class="mut sm">くわしくは '+esc(appLabel(ak))+'で みてね。</div>';
   }
@@ -1881,7 +1929,7 @@ window.openGacha=()=>{
  h+='<div style="display:flex;gap:10px;justify-content:center;margin-bottom:12px">'
   +'<button class="btn'+(p.coins<30?' ':'')+'" '+(p.coins<30?'disabled':'onclick="doGacha()"')+'>ひく!</button>'
   +'<button class="btn ghost" onclick="showZukan()">ずかん '+owned+'/'+total+'</button></div>';
- h+='<button class="btn ghost small" onclick="$(\'ovl\').innerHTML=\'\'">とじる</button>';
+ h+='<button class="btn ghost small" onclick="$(\'ovl\').innerHTML=\'\';renderMap()">とじる</button>';
  h+='</div></div>';
  $('ovl').innerHTML=h;
 };
@@ -1900,6 +1948,7 @@ window.doGacha=()=>{
   +'<div style="font-size:3rem;animation:popIn .4s">'+g.e+'</div>'
   +'<h2>'+({N:'ノーマル',R:'レア',SR:'スーパーレア'}[g.r])+'</h2>'
   +dup+'<div class="srow" style="justify-content:center">スター ×'+p.collection[g.id].n+'</div>'
+  +'<div class="coinPill" style="margin:8px auto 0">🪙 '+p.coins+'</div>'
   +'<div style="display:flex;gap:10px;justify-content:center;margin-top:10px">'
   +'<button class="btn ghost" onclick="openGacha()">もどる</button>'
   +(p.coins>=30?'<button class="btn" onclick="doGacha()">もう1かい</button>':'')
@@ -2118,6 +2167,11 @@ async function run(){
    msg('いわに ごっつん! じゅんばんを なおしてみよう',true);
    break;
   }
+  // 🔁の周回が変わった最初の一歩で「◯かいめ!」(第2波の金色バッジ復活)
+  {const prev=res.path[i-1];const pl=prev&&prev.lap;
+   if(p.lap&&(!pl||pl.cur!==p.lap.cur||pl.total!==p.lap.total)){
+    fx(p.lap.cur+'かいめ!',p.x,p.y,'lap');
+   }}
   moko.style.left=(p.x*cellPx)+'px';moko.style.top=(p.y*cellPx)+'px';
   moko.classList.add('hop');SFX.step();
   if(p.ev!=='sea')visited.push({x:p.x,y:p.y});
