@@ -9,7 +9,7 @@
 <script>
 /* ===== BUILD CONFIG (build.jsが書き換える。手動編集しない) ===== */
 const EDITION = "full";      // "full" | "lite"
-const APP_VERSION = "1.9.2";
+const APP_VERSION = "1.9.3";
 const STORE_URL = "https://shinme-lab.booth.pm/";
 const LITE = (EDITION === "lite");
 const VER  = (APP_VERSION.indexOf("__")===0) ? "dev" : APP_VERSION;
@@ -767,24 +767,24 @@ const STAGES=[
   grid:['s s s s s s s s s s s','s g g g g g s s s s s','s s s s s g s s s s s','s s s s s g s s s s s','s s s s s g s s s s s','s s s s s g g g g g s','s s s s s s s s s g s','s s s s s s s s s s s'],start:[1,1],chests:[[5,1],[9,6]]},
  {id:'4-8',lv:4,name:'だいぼうけんの みち',par:7,hint:'いちばん ながい たび。🔁で みじかく できるかな',
   grid:['s s s s s s s s s','s g g g s s s s s','s s s g s s s s s','s s s f g g s s s','s s s s s g s s s','s s s s s g g g s','s s s s s s s g s','s s s s s s s g s','s s s s s s s g s','s s s s s s s g s','s s s s s s s s s'],start:[1,1],chests:[[5,5],[7,9]]},
- // ===== Lv5: もし(❓が必要な面) ===== (minBlocks❓拡張で証明)
- {id:'5-1',lv:5,name:'はなで もぐる',par:5,hint:'はなの マスで だけ したに もぐれるよ',
-  grid:['s s s s s s s','s g g f g f g','s s s g s g s','s s s s s s s'],start:[1,1],chests:[[3,2],[5,2]]},
- {id:'5-2',lv:5,name:'ふたつの はな',par:5,hint:'くりかえしの なかで、はなの ときだけ もぐるよ',
-  grid:['s s s s s s s s','s g f g g f g s','s s g s s g s s','s s s s s s s s'],start:[1,1],chests:[[2,2],[5,2]]},
- {id:'5-3',lv:5,name:'とびとびの はな',par:5,hint:'はなの ないところで もぐると うみ。❓の でばん!',
-  grid:['s s s s s s s s s','s g f g g f g g s','s s g s s g s s s','s s s s s s s s s'],start:[1,1],chests:[[2,2],[5,2]]},
- {id:'5-4',lv:5,name:'みっつの はな',par:6,hint:'はなの ばしょは バラバラ。❓で えらぼう',
-  grid:['s s s s s s s s s s','s g f g g f g f g s','s s g s s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,2],[5,2],[7,2]]},
- {id:'5-5',lv:5,name:'ながい はなみち',par:6,hint:'ながい みち。はなの ときだけ もぐる',
-  grid:['s s s s s s s s s s s','s g f g g f g f g g s','s s g s s g s g s s s','s s s s s s s s s s s'],start:[1,1],chests:[[2,2],[5,2],[7,2]]},
- {id:'5-6',lv:5,name:'ながい ふきそく',par:6,hint:'はなの ときだけ もぐる。ばしょは バラバラ',
-  grid:['s s s s s s s s s s s','s g g f g g f g f g s','s s s g s s g s g s s','s s s s s s s s s s s'],start:[1,1],chests:[[3,2],[6,2],[8,2]]},
- {id:'5-7',lv:5,name:'よっつの はな',par:6,hint:'はなを ぜんぶ まわろう',
-  grid:['s s s s s s s s s s s','s g f g g f g f g g s','s s g s s g s g s s s','s s s s s s s s s s s'],start:[1,1],chests:[[2,2],[5,2],[7,2]]},
- {id:'5-8',lv:5,name:'はなの だいぼうけん',par:6,hint:'はなを ぜんぶ まわろう。❓と🔁で みじかく',
-  grid:['s s s s s s s s s s s s','s g f g g f g f g f g s','s s g s s g s g s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,2],[5,2],[7,2],[9,2]]},
-  // ===== Lv6: 入れ子(maxBlocksで強制・5系統) =====
+  // ===== Lv5: もし❓(向き多様・混合で❓有効) =====
+ {id:'5-1',lv:5,name:'はなで もぐる',par:3,hint:'はなの マスで だけ したに もぐれるよ。❓の あとに ブロックを いれてね',
+  grid:['s s s s s s','s g f f g s','s s g g s s','s s s s s s'],start:[1,1],chests:[[2,2],[3,2]]},
+ {id:'5-2',lv:5,name:'はなを くりかえす',par:4,hint:'🔁の なかに ❓を いれると、はなの ときだけ もぐるを くりかえせる!',
+  grid:['s s s s s s s','s g f f f g s','s s g g g s s','s s s s s s s'],start:[1,1],chests:[[2,2],[3,2],[4,2]]},
+ {id:'5-3',lv:5,name:'うえの はな',par:4,hint:'こんどは はなで うえに のびる!',
+  grid:['s s s s s s s','s s g g g s s','s g f f f g s','s s s s s s s'],start:[1,2],chests:[[2,1],[3,1],[4,1]]},
+ {id:'5-4',lv:5,name:'よこの はな',par:4,hint:'したに すすんで、はなで よこに もぐる',
+  grid:['s s s s','s g s s','s f g s','s f g s','s f g s','s g s s','s s s s'],start:[1,1],chests:[[2,2],[2,3],[2,4]]},
+ {id:'5-5',lv:5,name:'よこの ぼうけん',par:5,hint:'よこの はなを ❓と🔁で ぜんぶ!',
+  grid:['s s s s','s g s s','s f g s','s g s s','s f g s','s f g s','s f g s','s g s s','s s s s'],start:[1,1],chests:[[2,2],[2,4],[2,5],[2,6]]},
+ {id:'5-6',lv:5,name:'とびとびの はな',par:7,hint:'はなが とびとび。はなじゃない マスは そのまま すすむよ',
+  grid:['s s s s s s s s s s','s g f f g f g f g s','s s g g s g s g s s','s s s s s s s s s s'],start:[1,1],chests:[[2,2],[3,2],[5,2],[7,2]]},
+ {id:'5-7',lv:5,name:'うえの ぼうけん',par:7,hint:'うえの はなが とびとび! ❓なら みじかく まわれる',
+  grid:['s s s s s s s s s s','s s g s g g s g s s','s g f g f f g f g s','s s s s s s s s s s'],start:[1,2],chests:[[2,1],[4,1],[5,1],[7,1]]},
+ {id:'5-8',lv:5,name:'はなの だいぼうけん',par:9,hint:'はなを ぜんぶ まわろう。❓と🔁で みじかく',
+  grid:['s s s s s s s s s s s s','s g f g f f g f g f g s','s s g s g g s g s g s s','s s s s s s s s s s s s'],start:[1,1],chests:[[2,2],[4,2],[5,2],[7,2],[9,2]]},
+ // ===== Lv6: 入れ子(maxBlocksで強制・5系統) =====
  {id:'6-1',lv:6,name:'にじゅうの かいだん',par:4,hint:'🔁の なかに 🔁を いれられるよ(Lv6から!)「みぎ3・した」を くりかえす',maxBlocks:4,
   grid:['s s s s s s s s s s s s','s g g g g s s s s s s s','s s s s g g g g s s s s','s s s s s s s g g g g s','s s s s s s s s s s g s','s s s s s s s s s s s s'],start:[1,1],chest:[10,4]},
  {id:'6-2',lv:6,name:'たての かいだん',par:4,hint:'こんどは たて!「みぎ・した3かい」を くりかえす',maxBlocks:4,
